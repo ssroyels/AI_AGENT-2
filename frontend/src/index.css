@@ -1,0 +1,10 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+.message-box::-webkit-scrollbar{
+    display: node;
+}
+.message-box{
+    scroll-behavior: smooth;
+}
