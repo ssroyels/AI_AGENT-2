@@ -46,14 +46,19 @@ const Project = () => {
 
   const send = () => {
     const msgObj = { sender: user, message };
+    
     sendMessage("project-message", msgObj);
     setMessages((prev) => [...prev, msgObj]);
     setMessage("");
   };
 
   const parseMessageContent = (msg) => {
+    // console.log(msg)
+    // console.log(  msg?.candidates?.[0]?.content?.parts?.[0]?.text || JSON.stringify(msg))
     if (typeof msg === "string") return msg;
+        
     return (
+  
       msg?.candidates?.[0]?.content?.parts?.[0]?.text || JSON.stringify(msg)
     );
   };
@@ -135,7 +140,7 @@ setCurrentFile("App.js");
 <div className="flex flex-col h-[50vh] md:h-full relative">
   <div
     ref={messageBoxRef}
-    className="flex-grow p-2 overflow-y-auto space-y-2 bg-white"
+    className="flex-grow p-2  overflow-y-auto space-y-2 bg-white"
   >
     {messages.map((msg, index) => {
       const isSelf = msg.sender?._id === user._id;
