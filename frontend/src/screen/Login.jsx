@@ -1,4 +1,4 @@
-import axios from '../config/axios.js';
+import axios from 'axios';
 import React, { useContext, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { UserContext } from "../context/user.context";
@@ -23,7 +23,7 @@ const Login = () => {
     setLoading(true);
     setError("");
 
-    axios.post('/users/login', { email, password })
+    axios.post('http://localhost:5000/users/login', { email, password })
       .then((res) => {
         localStorage.setItem('token', res.data.token);
         setUser(res.data.user);
