@@ -1,4 +1,4 @@
-import axios from 'axios';
+import axios from '../config/axios.js';
 import React, { useContext, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { UserContext } from "../context/user.context";
@@ -6,7 +6,7 @@ import LoginIllustration from '../assets/Mobile login-rafiki.svg';
 
 const Login = () => {
   // For dev
-const BASE_URL = import.meta.env.VITE_API_URL ? "http://localhost:5000" : "https://your-backend.onrender.com";
+// const BASE_URL = import.meta.env.VITE_API_URL ? "http://localhost:5000" : "https://your-backend.onrender.com";
 
 // Usage
 
@@ -23,7 +23,7 @@ const BASE_URL = import.meta.env.VITE_API_URL ? "http://localhost:5000" : "https
     setLoading(true);
     setError("");
 
-    axios.post(`${BASE_URL}/users/login`, { email, password })
+    axios.post('/users/login', { email, password })
       .then((res) => {
         localStorage.setItem('token', res.data.token);
         setUser(res.data.user);
