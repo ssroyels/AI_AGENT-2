@@ -9,7 +9,7 @@ const Login = () => {
 const BASE_URL = import.meta.env.VITE_API_URL ? "http://localhost:5000" : "https://your-backend.onrender.com";
 
 // Usage
-axios.post(`${BASE_URL}/users/login`, data);
+
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
