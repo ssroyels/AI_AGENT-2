@@ -12,7 +12,19 @@ export const createUserController = async (req, res) => {
         return res.status(400).json({ errors: errors.array() });
     }
     try {
-        const user = await userService.createUser(req.body);
+        const {name,email,password} = req.body;
+         if (!email || !password) {
+        throw new Error('Email and password are required');
+        }
+
+    const hashedPassword = await userModel.hashPassword(password);
+
+    const user = await userModel.create({
+        name:name,
+        email:email,
+        password: hashedPassword
+    });
+       
 
         const token = await user.generateJWT();
 
