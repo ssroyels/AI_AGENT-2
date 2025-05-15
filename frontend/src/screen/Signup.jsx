@@ -15,18 +15,12 @@ const Signup = () => {
 
   const SubmitHandler = async (e) => {
     e.preventDefault();
-    await client.post('/register', {
-     name,
-     email,
-      password,
-    })
-      .then(() => {
+    await client.post('/register', {name,email, password}).then(() => {
         setName('');
         setEmail('');
         setPassword('');
         navigate('/login');
-      })
-      .catch((err) => {
+      }).catch((err) => {
         console.error(err.message);
         alert('Signup failed!');
       });
