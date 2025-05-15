@@ -3,12 +3,16 @@ import React, { useContext, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { UserContext } from "../context/user.context";
 import LoginIllustration from '../assets/Mobile login-rafiki.svg';
+import server from './environment';
 
-const Login = () => {
+const Login =  () => {
   // For dev
 // const BASE_URL = import.meta.env.VITE_API_URL ? "http://localhost:5000" : "https://your-backend.onrender.com";
 
 // Usage
+const client = axios.create({
+    baseURL: `${server}/users`
+})
 
 
   const [email, setEmail] = useState("");
@@ -18,12 +22,12 @@ const Login = () => {
   const [error, setError] = useState("")
   const navigate = useNavigate();
 
-  const SubmitHandler = (e) => {
+  const SubmitHandler = async (e) => {
     e.preventDefault();
     setLoading(true);
     setError("");
 
-    axios.post('http://localhost:5000/users/login', { email, password })
+    await client.post('/login', { email:email, password:password })
       .then((res) => {
         localStorage.setItem('token', res.data.token);
         setUser(res.data.user);
