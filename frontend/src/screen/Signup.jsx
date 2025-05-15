@@ -15,7 +15,8 @@ const Signup = () => {
 
   const SubmitHandler = async (e) => {
     e.preventDefault();
-    await client.post('/register', {name,email, password}).then(() => {
+    await client.post('/register', {name,email, password},{ withCredentials: true
+}).then(() => {
         setName('');
         setEmail('');
         setPassword('');

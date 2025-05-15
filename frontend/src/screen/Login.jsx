@@ -27,7 +27,8 @@ const client = axios.create({
     setLoading(true);
     setError("");
 
-    await client.post('/login', {email,password })
+    await client.post('/login', {email,password },{ withCredentials: true
+})
       .then((res) => {
         localStorage.setItem('token', res.data.token);
         setUser(res.data.user);
