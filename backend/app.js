@@ -6,8 +6,8 @@ import projectRoutes from './routes/project.routes.js';
 import aiRoutes from './routes/ai.routes.js';
 import cookieParser from 'cookie-parser';
 import cors from 'cors';
-connect();
 
+connect();
 
 const app = express();
 
@@ -17,12 +17,19 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 
+// Custom basic routes
+app.get('/', (req, res) => {
+  res.send('AI Agent API is live!');
+});
+
+app.get('/register', (req, res) => {
+  res.send('Register endpoint placeholder — use POST /users/register instead');
+});
+
+// API routes
 app.use('/users', userRoutes);
 app.use('/projects', projectRoutes);
-app.use("/ai", aiRoutes)
+app.use('/ai', aiRoutes);
 
+export default app;
 
-
-
-
-export default app; 
