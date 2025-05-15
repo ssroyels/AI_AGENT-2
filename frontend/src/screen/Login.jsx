@@ -1,6 +1,6 @@
 import axios from 'axios';
 import React, { useContext, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { UserContext } from "../context/user.context";
 import LoginIllustration from '../assets/Mobile login-rafiki.svg';
 import server from './environment';
@@ -107,7 +107,7 @@ const client = axios.create({
 
           <p className="text-sm text-center text-gray-600">
             Don't have an account?
-            <a href="/register" className="text-blue-600 hover:underline ml-1">Sign up</a>
+            <Link to={"/register"} className="text-blue-600 hover:underline ml-1">Sign up</Link>
           </p>
         </div>
       </div>

@@ -1,6 +1,6 @@
 import axios from 'axios';
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import signupImage from '../assets/sk.jpg'; // Download and place in /assets
 import server from './environment';
 
@@ -90,7 +90,7 @@ const Signup = () => {
         </form>
 
         <p className="text-sm text-center text-gray-600">
-          Already registered? <a href="/login" className="text-blue-600 hover:underline">Login</a>
+          Already registered? <Link to={"/login"} className="text-blue-600 hover:underline">Login</Link>
         </p>
       </div>
     </div>
