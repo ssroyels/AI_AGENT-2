@@ -10,6 +10,8 @@
     "lint": "eslint .",
     "preview": "vite preview"
   },
+  "proxy": "http://localhost:5000",
+
   "dependencies": {
     "@webcontainer/api": "^1.6.1",
     "axios": "^1.7.9",
