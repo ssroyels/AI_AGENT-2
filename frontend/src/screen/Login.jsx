@@ -1,18 +1,13 @@
-import axios from 'axios';
+import axios from '../config/axios';
 import React, { useContext, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { UserContext } from "../context/user.context";
 import LoginIllustration from '../assets/Mobile login-rafiki.svg';
-import server from './environment';
+
 
 const Login =  () => {
-  // For dev
-// const BASE_URL = import.meta.env.VITE_API_URL ? "http://localhost:5000" : "https://your-backend.onrender.com";
 
-// Usage
-const client = axios.create({
-    baseURL: `${server}/users`
-})
+
 
 
   const [email, setEmail] = useState("");
@@ -27,14 +22,14 @@ const client = axios.create({
     setLoading(true);
     setError("");
 
-    await client.post('/login', {email,password },{ withCredentials: true
+    await axios.post('/users/login', {email,password },{ withCredentials: true
 })
       .then((res) => {
         localStorage.setItem('token', res.data.token);
         setUser(res.data.user);
         setEmail("");
         setPassword("");
-        navigate("https://ai-agent-2-1.onrender.com/");
+        navigate("/");
       })
       .catch((err) => {
         setError(err.response?.data?.message || "Login failed. Try again.");

@@ -1,21 +1,19 @@
-import axios from 'axios';
+
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import signupImage from '../assets/sk.jpg'; // Download and place in /assets
-import server from './environment';
+import axios from "../config/axios"
 
 const Signup = () => {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const navigate = useNavigate();
-  const client = axios.create({
-    baseURL: `${server}/users`
-})
+
 
   const SubmitHandler = async (e) => {
     e.preventDefault();
-    await client.post('/register', {name,email, password},{ withCredentials: true
+    await axios.post('/users/register', {name,email, password},{ withCredentials: true
 }).then(() => {
         setName('');
         setEmail('');
