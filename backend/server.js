@@ -6,6 +6,8 @@ import jwt from 'jsonwebtoken';
 import mongoose from 'mongoose';
 import projectModel from './models/project.model.js';
 import { generateResult } from './services/ai.service.js';
+import cors from "cors";
+
 
 const port = 5000;
 
@@ -19,6 +21,7 @@ const io = new Server(server, {
 });
 
 
+app.use(cors());
 io.use(async (socket, next) => {
 
     try {
