@@ -185,8 +185,10 @@ const Project = () => {
     }
 
     return (
-        <main className='h-screen w-screen flex'>
-            <section className="left relative flex flex-col h-screen min-w-96 bg-slate-300">
+       <main className="h-screen w-screen flex flex-col md:flex-row overflow-hidden">
+
+           <section className="left relative flex flex-col h-[60vh] md:h-full md:min-w-96 w-full bg-slate-300">
+
                 <header className='flex justify-between items-center p-2 px-4 w-full bg-slate-100 absolute z-10 top-0'>
                     <button className='flex gap-2' onClick={() => setIsModalOpen(true)}>
                         <i className="ri-add-fill mr-1"></i>
@@ -196,7 +198,8 @@ const Project = () => {
                         <i className="ri-group-fill"></i>
                     </button>
                 </header>
-                <div className="conversation-area pt-14 pb-10 flex-grow flex flex-col h-full relative">
+               <div className="conversation-area pt-14 pb-20 flex-grow flex flex-col h-full relative">
+
 
                     <div
                         ref={messageBox}
@@ -223,7 +226,8 @@ const Project = () => {
                             className='px-5 bg-slate-950 text-white'><i className="ri-send-plane-fill"></i></button>
                     </div>
                 </div>
-                <div className={`sidePanel w-full h-full flex flex-col gap-2 bg-slate-50 absolute transition-all ${isSidePanelOpen ? 'translate-x-0' : '-translate-x-full'} top-0`}>
+<div className={`sidePanel w-full md:w-auto h-full bg-slate-50 absolute transition-all top-0 z-20 ${isSidePanelOpen ? 'translate-x-0' : '-translate-x-full'}`}>
+
                     <header className='flex justify-between items-center px-4 p-2 bg-slate-200'>
 
                         <h1
@@ -254,9 +258,11 @@ const Project = () => {
                 </div>
             </section>
 
-            <section className="right  bg-red-50 flex-grow h-full flex">
+           <section className="right flex flex-col md:flex-row flex-grow h-full overflow-hidden">
 
-                <div className="explorer h-full max-w-64 min-w-52 bg-slate-200">
+
+               <div className="explorer h-64 md:h-full max-w-full md:max-w-64 min-w-52 bg-slate-200 overflow-auto">
+
                     <div className="file-tree w-full">
                         {
                             Object.keys(fileTree).map((file, index) => (
@@ -278,7 +284,8 @@ const Project = () => {
                 </div>
 
 
-                <div className="code-editor flex flex-col flex-grow h-full shrink">
+             <div className="code-editor flex flex-col flex-grow h-[50vh] md:h-full overflow-auto">
+
 
                     <div className="top flex justify-between w-full">
 
@@ -380,7 +387,7 @@ const Project = () => {
                 </div>
 
                 {iframeUrl && webContainer &&
-                    (<div className="flex min-w-96 flex-col h-full">
+                    (  <div className="w-full md:min-w-96 h-[50vh] md:h-full flex flex-col">
                         <div className="address-bar">
                             <input type="text"
                                 onChange={(e) => setIframeUrl(e.target.value)}
