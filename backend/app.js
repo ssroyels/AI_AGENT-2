@@ -12,8 +12,9 @@ connect();
 const app = express();
 
 app.use(cors({
-  origin: ['http://localhost:5173', 'https://ai-agent-2-dgir.onrender.com'],
-  credentials: true,
+  origin: 'https://ai-agent-2-1.onrender.com', // or '*' for all origins (use with caution)
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  credentials: true // if you're using cookies or authorization headers
 }));
 app.use(morgan('dev'));
 app.use(express.json());
