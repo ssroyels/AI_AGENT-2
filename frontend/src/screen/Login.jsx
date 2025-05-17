@@ -34,7 +34,7 @@ const client = axios.create({
         setUser(res.data.user);
         setEmail("");
         setPassword("");
-        navigate("/");
+        navigate("https://ai-agent-2-1.onrender.com/");
       })
       .catch((err) => {
         setError(err.response?.data?.message || "Login failed. Try again.");
