@@ -14,28 +14,23 @@ const app = express();
 /* -------------------------------------------------------------------------- */
 /* CORS CONFIG (PRODUCTION SAFE) */
 /* -------------------------------------------------------------------------- */
-const ALLOWED_ORIGINS = [
-  "http://localhost:5173",
-  "https://ai-agent-2-1.onrender.com",
-  "https://ai-agent-2-dgir.onrender.com",
-];
+// const ALLOWED_ORIGINS = [
+//   "http://localhost:5173",
+//   "https://ai-agent-2-1.onrender.com",
+//   "https://ai-agent-2-dgir.onrender.com",
+// ];
 
 app.use(
   cors({
-    origin: function (origin, callback) {
-      // allow REST tools like Postman
-      if (!origin) return callback(null, true);
-
-      if (ALLOWED_ORIGINS.includes(origin)) {
-        return callback(null, true);
-      }
-
-      return callback(new Error("Not allowed by CORS"));
-    },
+    origin: [
+      "http://localhost:5173",
+      "https://ai-agent-2-1.onrender.com",
+    ],
     credentials: true,
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
   })
 );
+
 
 /* -------------------------------------------------------------------------- */
 /* MIDDLEWARES */
