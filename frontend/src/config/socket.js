@@ -1,23 +1,69 @@
-import socket from "socket.io-client";
+import { io } from "socket.io-client";
 
 let socketInstance = null;
-export const initializeSocket= (projectId) => {
-    socketInstance = socket(import.meta.env.VITE_API_URL,{
-        auth:{
-            token:localStorage.getItem('token')
-        },
-        query:{
-            projectId
-        }
-    });
 
-    return socketInstance;
-}
+/* -------------------------------------------------------------------------- */
+/* INIT SOCKET */
+/* -------------------------------------------------------------------------- */
+export const initializeSocket = (projectId) => {
+  const token = localStorage.getItem("token");
 
-export const receiveMessage = (eventName,cb) => {
-    socketInstance.on(eventName,cb);
-}
+  if (!token) {
+    console.warn("❌ Socket init blocked: No token found");
+    return null;
+  }
 
-export const sendMessage = (eventName,data) => {
-    socketInstance.emit(eventName,data);
-}
+  if (socketInstance) {
+    socketInstance.disconnect();
+  }
+
+  socketInstance = io(import.meta.env.VITE_API_URL, {
+    transports: ["websocket"],
+    auth: {
+      token, // fresh token
+    },
+    query: {
+      projectId,
+    },
+  });
+
+  socketInstance.on("connect", () => {
+    console.log("🟢 Socket connected:", socketInstance.id);
+  });
+
+  socketInstance.on("connect_error", (err) => {
+    console.error("🔴 Socket connection error:", err.message);
+  });
+
+  return socketInstance;
+};
+
+/* -------------------------------------------------------------------------- */
+/* RECEIVE MESSAGE */
+/* -------------------------------------------------------------------------- */
+export const receiveMessage = (eventName, cb) => {
+  if (!socketInstance) return;
+  socketInstance.off(eventName);
+  socketInstance.on(eventName, cb);
+};
+
+/* -------------------------------------------------------------------------- */
+/* SEND MESSAGE */
+/* -------------------------------------------------------------------------- */
+export const sendMessage = (eventName, data) => {
+  if (!socketInstance) {
+    console.warn("⚠️ Socket not initialized");
+    return;
+  }
+  socketInstance.emit(eventName, data);
+};
+
+/* -------------------------------------------------------------------------- */
+/* DISCONNECT SOCKET (ON LOGOUT) */
+/* -------------------------------------------------------------------------- */
+export const disconnectSocket = () => {
+  if (socketInstance) {
+    socketInstance.disconnect();
+    socketInstance = null;
+  }
+};
