@@ -1,89 +1,154 @@
-
-import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import signupImage from '../assets/sk.jpg'; // Download and place in /assets
-import axios from "../config/axios"
+import { useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import axios from "../config/axios";
+import signupImage from "../assets/sk.jpg";
 
 const Signup = () => {
-  const [name, setName] = useState('');
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+
   const navigate = useNavigate();
 
-
+  /* -------------------------------------------------------------------------- */
+  /* SUBMIT HANDLER */
+  /* -------------------------------------------------------------------------- */
   const SubmitHandler = async (e) => {
     e.preventDefault();
-    await axios.post('/users/register', {name,email, password},{ withCredentials: true
-}).then(() => {
-        setName('');
-        setEmail('');
-        setPassword('');
-        navigate('/login');
-      }).catch((err) => {
-        console.error(err.message);
-        alert('Signup failed!');
-      });
+    setError(null);
+
+    if (!name.trim() || !email.trim() || !password.trim()) {
+      return setError("All fields are required");
+    }
+
+    if (!email.includes("@")) {
+      return setError("Enter a valid email");
+    }
+
+    try {
+      setLoading(true);
+
+      await axios.post(
+        "/users/register",
+        {
+          name: name.trim(),
+          email: email.trim(),
+          password,
+        },
+        { withCredentials: true }
+      );
+
+      setName("");
+      setEmail("");
+      setPassword("");
+
+      navigate("/login");
+    } catch (err) {
+      setError(
+        err.response?.data?.message || "Signup failed. Try again."
+      );
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
     <div className="min-h-screen flex flex-col md:flex-row items-center justify-center bg-gray-100 p-4">
-      
-      {/* Illustration (Visible on md+ screens) */}
+
+      {/* LEFT IMAGE */}
       <div className="hidden md:flex w-1/2 justify-center items-center p-6">
-        <img src={signupImage} alt="Signup illustration" className="max-w-full h-auto" />
+        <img
+          src={signupImage}
+          alt="Signup"
+          className="max-w-full h-auto"
+        />
       </div>
 
-      {/* Signup Form */}
+      {/* FORM */}
       <div className="w-full max-w-md bg-white rounded-2xl shadow-md p-8 space-y-6">
-        <h2 className="text-2xl font-bold text-center text-gray-800">Sign Up</h2>
+        <h2 className="text-2xl font-bold text-center text-gray-800">
+          Create Account
+        </h2>
+
+        {/* ERROR */}
+        {error && (
+          <p className="text-red-600 text-sm text-center">
+            {error}
+          </p>
+        )}
 
         <form className="space-y-4" onSubmit={SubmitHandler}>
+
+          {/* NAME */}
           <div>
-            <label htmlFor="name" className="block text-sm font-medium text-gray-700">Name</label>
+            <label className="block text-sm font-medium text-gray-700">
+              Name
+            </label>
             <input
               type="text"
-              id="name"
               value={name}
               onChange={(e) => setName(e.target.value)}
               required
-              className="w-full mt-1 px-4 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:outline-none"
+              className="w-full mt-1 px-4 py-2 border rounded-xl focus:ring-2 focus:ring-blue-500"
             />
           </div>
 
+          {/* EMAIL */}
           <div>
-            <label htmlFor="email" className="block text-sm font-medium text-gray-700">Email</label>
+            <label className="block text-sm font-medium text-gray-700">
+              Email
+            </label>
             <input
               type="email"
-              id="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
-              className="w-full mt-1 px-4 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:outline-none"
+              className="w-full mt-1 px-4 py-2 border rounded-xl focus:ring-2 focus:ring-blue-500"
             />
           </div>
 
+          {/* PASSWORD */}
           <div>
-            <label htmlFor="password" className="block text-sm font-medium text-gray-700">Password</label>
-            <input
-              type="password"
-              id="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-              className="w-full mt-1 px-4 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:outline-none"
-            />
+            <label className="block text-sm font-medium text-gray-700">
+              Password
+            </label>
+
+            <div className="relative">
+              <input
+                type={showPassword ? "text" : "password"}
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+                className="w-full mt-1 px-4 py-2 border rounded-xl focus:ring-2 focus:ring-blue-500"
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-3 top-3 text-sm text-gray-600"
+              >
+                {showPassword ? "Hide" : "Show"}
+              </button>
+            </div>
           </div>
 
+          {/* SUBMIT */}
           <button
             type="submit"
-            className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-xl transition duration-200"
+            disabled={loading}
+            className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white font-semibold py-2 rounded-xl"
           >
-            Sign Up
+            {loading ? "Creating account..." : "Sign Up"}
           </button>
         </form>
 
         <p className="text-sm text-center text-gray-600">
-          Already registered? <Link to={"/login"} className="text-blue-600 hover:underline">Login</Link>
+          Already registered?{" "}
+          <Link to="/login" className="text-blue-600 hover:underline">
+            Login
+          </Link>
         </p>
       </div>
     </div>

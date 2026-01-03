@@ -1,15 +1,67 @@
-import React, { createContext, useContext, useState } from 'react';
+import { createContext, useContext, useEffect, useState } from "react";
 
+/* -------------------------------------------------------------------------- */
+/* CONTEXT */
+/* -------------------------------------------------------------------------- */
+export const UserContext = createContext(null);
 
-export const UserContext = createContext();
+/* -------------------------------------------------------------------------- */
+/* PROVIDER */
+/* -------------------------------------------------------------------------- */
+export const UserProvider = ({ children }) => {
+  const [user, setUser] = useState(null);
+  const [loading, setLoading] = useState(true);
 
-export const UserProvider = ({children}) => {
+  /* -------------------------------------------------------------------------- */
+  /* LOAD USER FROM LOCAL STORAGE (ON REFRESH) */
+  /* -------------------------------------------------------------------------- */
+  useEffect(() => {
+    const storedUser = localStorage.getItem("user");
+    if (storedUser) {
+      setUser(JSON.parse(storedUser));
+    }
+    setLoading(false);
+  }, []);
 
-    const [user,setUser] = useState(null);
-    return(
-        <UserContext.Provider value={{user,setUser}}>
-            {children}
-        </UserContext.Provider>
-    )
-}
+  /* -------------------------------------------------------------------------- */
+  /* LOGIN */
+  /* -------------------------------------------------------------------------- */
+  const login = (userData, token) => {
+    setUser(userData);
+    localStorage.setItem("user", JSON.stringify(userData));
+    if (token) {
+      localStorage.setItem("token", token);
+    }
+  };
 
+  /* -------------------------------------------------------------------------- */
+  /* LOGOUT */
+  /* -------------------------------------------------------------------------- */
+  const logout = () => {
+    setUser(null);
+    localStorage.removeItem("user");
+    localStorage.removeItem("token");
+  };
+
+  return (
+    <UserContext.Provider
+      value={{
+        user,
+        setUser,          // backward compatible
+        login,
+        logout,
+        loading,
+        isAuthenticated: !!user,
+      }}
+    >
+      {children}
+    </UserContext.Provider>
+  );
+};
+
+/* -------------------------------------------------------------------------- */
+/* CUSTOM HOOK (CLEAN USAGE) */
+/* -------------------------------------------------------------------------- */
+export const useUser = () => {
+  return useContext(UserContext);
+};

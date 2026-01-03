@@ -1,37 +1,38 @@
-import React, { useContext, useEffect, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
-import { UserContext } from '../context/user.context'
+import { Navigate, useLocation } from "react-router-dom";
+import { useUser } from "../context/user.context";
 
 const UserAuth = ({ children }) => {
+  const { loading, isAuthenticated } = useUser();
+  const location = useLocation();
 
-    const { user } = useContext(UserContext)
-    const [ loading, setLoading ] = useState(true)
-    const token = localStorage.getItem('token')
-    const navigate = useNavigate()
-    useEffect(() => {
-        if (user) {
-            setLoading(false)
-        }
-
-        if (!token) {
-            navigate('/login')
-        }
-
-        if (!user) {
-            navigate('/login')
-        }
-
-    }, [])
-
-    if (loading) {
-        return <div>Loading...</div>
-    }
-
-
+  /* -------------------------------------------------------------------------- */
+  /* WAIT UNTIL AUTH STATE IS READY */
+  /* -------------------------------------------------------------------------- */
+  if (loading) {
     return (
-        <>
-            {children}</>
-    )
-}
+      <div className="h-screen flex items-center justify-center">
+        <p className="text-lg animate-pulse">Checking authentication...</p>
+      </div>
+    );
+  }
 
-export default UserAuth
+  /* -------------------------------------------------------------------------- */
+  /* NOT LOGGED IN → REDIRECT */
+  /* -------------------------------------------------------------------------- */
+  if (!isAuthenticated) {
+    return (
+      <Navigate
+        to="/login"
+        replace
+        state={{ from: location }}
+      />
+    );
+  }
+
+  /* -------------------------------------------------------------------------- */
+  /* AUTHENTICATED → ALLOW ACCESS */
+  /* -------------------------------------------------------------------------- */
+  return <>{children}</>;
+};
+
+export default UserAuth;
