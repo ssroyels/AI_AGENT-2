@@ -21,8 +21,9 @@ const Home = () => {
   /* FETCH PROJECTS */
   /* -------------------------------------------------------------------------- */
   useEffect(() => {
+    const token = localStorage.getItem("token")
     axiosInstance
-      .get("/projects/all")
+      .get("/projects/all",{headers:{Authorization:`Bearer ${token}`}})
       .then((res) => {
         setProjects(res.data.projects);
         setFilteredProjects(res.data.projects);
@@ -62,6 +63,9 @@ const Home = () => {
 
       const res = await axiosInstance.post("/projects/create", {
         name: projectName.trim(),
+        headers:{
+          Authorization:`Bearer ${localStorage.getItem("token")}`
+        }
       });
 
       // Optimistic UI
