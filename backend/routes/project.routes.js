@@ -7,13 +7,13 @@ const router = Router();
 
 
 router.post('/create',
-    authMiddleWare.authUser,
+    // authMiddleWare.authUser,
     body('name').isString().withMessage('Name is required'),
     projectController.createProject
 )
 
 router.get('/all',
-    authMiddleWare.authUser,
+    // authMiddleWare.authUser,
     projectController.getAllProject
 )
 
