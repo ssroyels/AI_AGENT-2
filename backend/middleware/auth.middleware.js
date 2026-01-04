@@ -5,15 +5,19 @@ export const authUser = async (req, res, next) => {
   try {
     // ✅ Safely extract token
     const authHeader = req.headers.authorization;
+    console.log(authHeader)
     const token =
       req.cookies?.token ||
       (authHeader && authHeader.startsWith("Bearer ")
         ? authHeader.split(" ")[1]
         : null);
 
+        console.log(token)
+
     if (!token) {
       return res.status(401).json({ error: "Unauthorized User: Token missing" });
     }
+    console.log("satyam bhai", token)
 
     // ✅ Check blacklist
     const isBlackListed = await redisClient.get(token);

@@ -13,7 +13,7 @@ const port = process.env.PORT || 5000;
 /* -------------------------------------------------------------------------- */
 /* ALLOWED ORIGINS */
 /* -------------------------------------------------------------------------- */
-const ALLOWED_ORIGINS ="https://ai-agent-2-dgir.onrender.com";
+// const ALLOWED_ORIGINS ="https://ai-agent-2-dgir.onrender.com";
 
 
 /* -------------------------------------------------------------------------- */
@@ -21,7 +21,7 @@ const ALLOWED_ORIGINS ="https://ai-agent-2-dgir.onrender.com";
 /* -------------------------------------------------------------------------- */
 app.use(
   cors({
-    origin: ALLOWED_ORIGINS,
+    origin: "*",
     credentials: true,
   })
 );
@@ -36,7 +36,7 @@ const server = http.createServer(app);
 /* -------------------------------------------------------------------------- */
 const io = new Server(server, {
   cors: {
-    origin: ALLOWED_ORIGINS,
+    origin: "*",
     credentials: true,
   },
 });

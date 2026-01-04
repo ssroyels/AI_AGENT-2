@@ -16,38 +16,58 @@ const Home = () => {
 
   const navigate = useNavigate();
   const inputRef = useRef(null);
+  const searchRef = useRef(null);
 
   /* -------------------------------------------------------------------------- */
   /* FETCH PROJECTS */
   /* -------------------------------------------------------------------------- */
   useEffect(() => {
-    const token = localStorage.getItem("token")
     axiosInstance
-      .get("/projects/all",{headers:{Authorization:`Bearer ${token}`}})
+      .get("/projects/all")
       .then((res) => {
         setProjects(res.data.projects);
         setFilteredProjects(res.data.projects);
       })
-      .catch(() => setError("Failed to load projects"))
+      .catch(() => setError("⚠️ Failed to load projects"))
       .finally(() => setLoading(false));
   }, []);
 
   /* -------------------------------------------------------------------------- */
-  /* SEARCH FILTER */
+  /* SEARCH (DEBOUNCED) */
   /* -------------------------------------------------------------------------- */
   useEffect(() => {
-    const filtered = projects.filter((p) =>
-      p.name.toLowerCase().includes(search.toLowerCase())
-    );
-    setFilteredProjects(filtered);
+    const t = setTimeout(() => {
+      const filtered = projects.filter((p) =>
+        p.name.toLowerCase().includes(search.toLowerCase())
+      );
+      setFilteredProjects(filtered);
+    }, 200);
+
+    return () => clearTimeout(t);
   }, [search, projects]);
 
   /* -------------------------------------------------------------------------- */
-  /* AUTO FOCUS MODAL INPUT */
+  /* KEYBOARD SHORTCUTS */
+  /* -------------------------------------------------------------------------- */
+  useEffect(() => {
+    const handler = (e) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === "k") {
+        e.preventDefault();
+        setIsModalOpen(true);
+      }
+      if (e.key === "Escape") setIsModalOpen(false);
+    };
+
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, []);
+
+  /* -------------------------------------------------------------------------- */
+  /* AUTO FOCUS */
   /* -------------------------------------------------------------------------- */
   useEffect(() => {
     if (isModalOpen) {
-      setTimeout(() => inputRef.current?.focus(), 100);
+      setTimeout(() => inputRef.current?.focus(), 120);
     }
   }, [isModalOpen]);
 
@@ -63,76 +83,72 @@ const Home = () => {
 
       const res = await axiosInstance.post("/projects/create", {
         name: projectName.trim(),
-        headers:{
-          Authorization:`Bearer ${localStorage.getItem("token")}`
-        }
       });
 
-      // Optimistic UI
       setProjects((prev) => [res.data.project, ...prev]);
       setFilteredProjects((prev) => [res.data.project, ...prev]);
 
       setProjectName("");
       setIsModalOpen(false);
     } catch {
-      setError("Failed to create project");
+      setError("❌ Failed to create project");
     } finally {
       setCreateLoading(false);
     }
   };
 
+  /* -------------------------------------------------------------------------- */
+  /* UI */
+  /* -------------------------------------------------------------------------- */
   return (
-    <main className="min-h-screen bg-slate-100">
-
+    <main className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-black text-white">
       {/* HEADER */}
-      <div className="bg-white shadow-md py-6 px-4 md:px-10 flex flex-col md:flex-row items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-slate-800">
-            DevBoard
-            <span className="ml-2 text-sm bg-blue-100 text-blue-600 px-2 py-1 rounded">
-              {projects.length} Projects
-            </span>
-          </h1>
-          <p className="text-sm text-gray-500">
-            Manage your collaborative coding projects
-          </p>
+      <header className="sticky top-0 z-40 backdrop-blur-md bg-black/40 border-b border-white/10">
+        <div className="px-6 py-4 flex flex-col md:flex-row items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-extrabold tracking-tight">
+              DevBoard ⚡
+            </h1>
+            <p className="text-sm text-slate-400">
+              Collaborative coding · realtime · AI-powered
+            </p>
+          </div>
+
+          <div className="mt-4 md:mt-0 flex gap-3 items-center">
+            <input
+              ref={searchRef}
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Search projects…"
+              className="px-4 py-2 rounded-md bg-white/10 border border-white/20 outline-none focus:ring-2 focus:ring-blue-500"
+            />
+
+            <button
+              onClick={() => setIsModalOpen(true)}
+              className="px-5 py-2 rounded-md bg-gradient-to-r from-blue-600 to-indigo-600 hover:scale-105 transition shadow-lg"
+            >
+              + New Project
+            </button>
+          </div>
         </div>
+      </header>
 
-        <button
-          onClick={() => setIsModalOpen(true)}
-          className="mt-4 md:mt-0 bg-blue-600 text-white px-5 py-2 rounded-md flex items-center gap-2 hover:bg-blue-700"
-        >
-          <i className="ri-add-line"></i>
-          New Project
-        </button>
-      </div>
-
-      {/* ILLUSTRATION */}
-      <div className="flex justify-center my-6 px-4">
+      {/* HERO */}
+      <section className="flex justify-center my-10 px-4">
         <img
           src={image}
           alt="Collaboration"
-          className="w-full max-w-xl rounded-md shadow-md"
+          className="w-full max-w-2xl rounded-xl shadow-2xl border border-white/10"
         />
-      </div>
-
-      {/* SEARCH */}
-      <div className="px-4 md:px-10 mb-4">
-        <input
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          placeholder="Search projects..."
-          className="w-full md:w-1/3 px-4 py-2 border rounded focus:ring-2 focus:ring-blue-500"
-        />
-      </div>
+      </section>
 
       {/* PROJECT GRID */}
-      <section className="px-4 md:px-10 pb-10">
+      <section className="px-6 pb-14">
         {loading ? (
-          <p className="text-center text-gray-500">Loading projects...</p>
+          <p className="text-center text-slate-400">Loading projects…</p>
         ) : filteredProjects.length === 0 ? (
-          <p className="text-center text-gray-500">
-            No projects found 🚀
+          <p className="text-center text-slate-400">
+            🚀 No projects found. Create your first one!
           </p>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
@@ -142,16 +158,28 @@ const Home = () => {
                 onClick={() =>
                   navigate("/project", { state: { project: proj } })
                 }
-                className="bg-white p-4 rounded-lg shadow hover:shadow-xl transition cursor-pointer hover:-translate-y-1"
+                className="group relative bg-white/10 backdrop-blur-md border border-white/10
+                rounded-xl p-5 cursor-pointer transition-all
+                hover:-translate-y-2 hover:shadow-2xl hover:border-blue-500/40"
               >
-                <h3 className="text-lg font-bold text-slate-800 truncate">
+                {/* Avatar */}
+                <div className="w-10 h-10 rounded-full bg-gradient-to-r from-blue-500 to-indigo-500
+                flex items-center justify-center font-bold mb-3">
+                  {proj.name[0]?.toUpperCase()}
+                </div>
+
+                <h3 className="text-lg font-bold truncate">
                   {proj.name}
                 </h3>
-                <p className="text-sm text-gray-500 mt-1">
-                  <i className="ri-user-3-line mr-1"></i>
-                  {proj.users.length} Collaborator
+
+                <p className="text-sm text-slate-400 mt-1 flex items-center gap-1">
+                  👥 {proj.users.length} collaborator
                   {proj.users.length !== 1 && "s"}
                 </p>
+
+                {/* Hover info */}
+                <div className="absolute inset-0 rounded-xl opacity-0 group-hover:opacity-100
+                bg-gradient-to-br from-blue-500/10 to-indigo-500/10 transition" />
               </div>
             ))}
           </div>
@@ -160,13 +188,10 @@ const Home = () => {
 
       {/* CREATE MODAL */}
       {isModalOpen && (
-        <div
-          onKeyDown={(e) => e.key === "Escape" && setIsModalOpen(false)}
-          className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50"
-        >
-          <div className="bg-white rounded-lg shadow-md w-11/12 max-w-md p-6">
+        <div className="fixed inset-0 z-50 bg-black/70 flex items-center justify-center">
+          <div className="bg-slate-900 rounded-xl shadow-2xl w-11/12 max-w-md p-6 border border-white/10">
             <h2 className="text-xl font-semibold mb-4">
-              Create New Project
+              🚀 Create New Project
             </h2>
 
             <form onSubmit={createProject}>
@@ -175,14 +200,15 @@ const Home = () => {
                 value={projectName}
                 onChange={(e) => setProjectName(e.target.value)}
                 placeholder="Project name"
-                className="w-full border p-2 rounded mb-4 focus:ring-2 focus:ring-blue-500"
+                className="w-full px-4 py-2 rounded-md bg-black/40 border border-white/20
+                outline-none focus:ring-2 focus:ring-blue-500 mb-4"
               />
 
-              <div className="flex justify-end gap-2">
+              <div className="flex justify-end gap-3">
                 <button
                   type="button"
                   onClick={() => setIsModalOpen(false)}
-                  className="px-4 py-2 bg-gray-300 rounded"
+                  className="px-4 py-2 bg-white/10 rounded-md"
                 >
                   Cancel
                 </button>
@@ -190,18 +216,24 @@ const Home = () => {
                 <button
                   type="submit"
                   disabled={createLoading}
-                  className="px-4 py-2 bg-blue-600 text-white rounded disabled:opacity-50"
+                  className="px-4 py-2 bg-blue-600 rounded-md hover:bg-blue-700 disabled:opacity-50"
                 >
-                  {createLoading ? "Creating..." : "Create"}
+                  {createLoading ? "Creating…" : "Create"}
                 </button>
               </div>
             </form>
+
+            <p className="text-xs text-slate-400 mt-4">
+              Tip: Press <kbd>Ctrl</kbd> + <kbd>K</kbd> to open this modal
+            </p>
           </div>
         </div>
       )}
 
       {error && (
-        <p className="text-center text-red-500 pb-4">{error}</p>
+        <p className="text-center text-red-400 pb-6">
+          {error}
+        </p>
       )}
     </main>
   );

@@ -11,9 +11,7 @@ import Markdown from "markdown-to-jsx";
 import hljs from "highlight.js";
 import { getWebContainer } from "../config/webContainer";
 
-/* -------------------------------------------------------------------------- */
-/* SYNTAX HIGHLIGHTER */
-/* -------------------------------------------------------------------------- */
+/* ---------------- Syntax Highlight ---------------- */
 function SyntaxHighlightedCode(props) {
   const ref = useRef(null);
 
@@ -31,7 +29,7 @@ const Project = () => {
   const { state } = useLocation();
   const { user } = useContext(UserContext);
 
-  const [project, setProject] = useState(state.project);
+  const [project, setProject] = useState(state?.project);
   const [messages, setMessages] = useState([]);
   const [message, setMessage] = useState("");
 
@@ -46,44 +44,56 @@ const Project = () => {
   const [aiTyping, setAiTyping] = useState(false);
   const [runLoading, setRunLoading] = useState(false);
 
+  /* Collaborator */
+  const [showCollaboratorModal, setShowCollaboratorModal] = useState(false);
+  const [allUsers, setAllUsers] = useState([]);
+  const [selectedUser, setSelectedUser] = useState(null);
+  const [loadingUsers, setLoadingUsers] = useState(false);
+
   const messageBoxRef = useRef(null);
 
-  /* -------------------------------------------------------------------------- */
-  /* ROTATING STATUS WORD */
-  /* -------------------------------------------------------------------------- */
+  /* Header animation */
   const words = ["LIVE", "CODING", "AI", "RUNNING"];
   const [wordIndex, setWordIndex] = useState(0);
 
   useEffect(() => {
-    const interval = setInterval(() => {
-      setWordIndex((i) => (i + 1) % words.length);
-    }, 1000);
-
-    return () => clearInterval(interval);
+    const t = setInterval(
+      () => setWordIndex((i) => (i + 1) % words.length),
+      1200
+    );
+    return () => clearInterval(t);
   }, []);
 
-  /* -------------------------------------------------------------------------- */
-  /* INIT SOCKET + DATA */
-  /* -------------------------------------------------------------------------- */
+  /* Init */
   useEffect(() => {
-    initializeSocket(project._id);
+    if (!project?._id) return;
 
+    initializeSocket(project._id);
     getWebContainer().then(setWebContainer);
 
     receiveMessage("project-message", (data) => {
-      if (data.sender?._id === "ai") setAiTyping(false);
-      setMessages((prev) => [...prev, data]);
+      if (data?.sender?._id === "ai") setAiTyping(false);
+      setMessages((p) => [...p, data]);
     });
 
     axios.get(`/projects/get-project/${project._id}`).then((res) => {
       setProject(res.data.project);
       setFileTree(res.data.project.fileTree || {});
     });
-  }, []);
+  }, [project?._id]);
 
-  /* -------------------------------------------------------------------------- */
-  /* AUTO SCROLL */
-  /* -------------------------------------------------------------------------- */
+  /* Fetch users */
+  useEffect(() => {
+    if (!showCollaboratorModal) return;
+    setLoadingUsers(true);
+
+    axios
+      .get("/users/all")
+      .then((res) => setAllUsers(res.data.users || []))
+      .finally(() => setLoadingUsers(false));
+  }, [showCollaboratorModal]);
+
+  /* Auto scroll */
   useEffect(() => {
     messageBoxRef.current?.scrollTo({
       top: messageBoxRef.current.scrollHeight,
@@ -91,26 +101,22 @@ const Project = () => {
     });
   }, [messages]);
 
-  /* -------------------------------------------------------------------------- */
-  /* SEND MESSAGE */
-  /* -------------------------------------------------------------------------- */
+  /* Send message */
   const send = () => {
     if (!message.trim()) return;
 
     sendMessage("project-message", { message, sender: user });
-    setMessages((prev) => [...prev, { sender: user, message }]);
+    setMessages((p) => [...p, { sender: user, message }]);
 
     if (message.includes("@ai")) setAiTyping(true);
     setMessage("");
   };
 
-  /* -------------------------------------------------------------------------- */
-  /* AI MESSAGE RENDER */
-  /* -------------------------------------------------------------------------- */
+  /* AI render */
   const renderAiMessage = (msg) => {
     const parsed = JSON.parse(msg);
     return (
-      <div className="bg-slate-900 text-white p-2 rounded">
+      <div className="bg-gradient-to-br from-purple-900 to-slate-900 text-white p-3 rounded-xl">
         <Markdown options={{ overrides: { code: SyntaxHighlightedCode } }}>
           {parsed.text}
         </Markdown>
@@ -118,9 +124,7 @@ const Project = () => {
     );
   };
 
-  /* -------------------------------------------------------------------------- */
-  /* RUN PROJECT */
-  /* -------------------------------------------------------------------------- */
+  /* Run project */
   const runProject = async () => {
     if (!webContainer) return;
 
@@ -138,68 +142,94 @@ const Project = () => {
     });
   };
 
+  /* Add collaborator */
+  const addCollaborator = async () => {
+    if (!selectedUser) return;
+
+    await axios.put("/projects/add-user", {
+      projectId: project._id,
+      users: [selectedUser._id],
+    });
+
+    setSelectedUser(null);
+    setShowCollaboratorModal(false);
+  };
+
   return (
-    <main className="h-screen w-screen flex flex-col overflow-hidden">
+    <main className="h-screen w-screen flex flex-col bg-slate-100">
       {/* HEADER */}
-      <header className="flex justify-between items-center px-4 py-2 bg-slate-900 text-white">
-        <h1 className="font-bold">
-          Project Dashboard —
-          <span className="ml-2 text-green-400 animate-pulse">
-            {words[wordIndex]}
-          </span>
-        </h1>
-        <span className="text-sm text-green-400">● Online</span>
+      <header className="px-6 py-3 flex justify-between items-center
+        bg-gradient-to-r from-slate-900 to-slate-800 text-white shadow">
+        <div>
+          <h1 className="font-bold text-lg">{project?.name}</h1>
+          <p className="text-xs text-slate-300">
+            Realtime Workspace · {words[wordIndex]}
+          </p>
+        </div>
+
+        <div className="flex gap-3 items-center">
+          <button
+            onClick={() => setShowCollaboratorModal(true)}
+            className="px-4 py-1.5 bg-blue-600 hover:bg-blue-700 rounded-md text-sm"
+          >
+            + Collaborator
+          </button>
+
+          <button
+            onClick={runProject}
+            className="px-4 py-1.5 bg-green-600 hover:bg-green-700 rounded-md text-sm"
+          >
+            {runLoading ? "Running..." : "▶ Run"}
+          </button>
+        </div>
       </header>
 
+      {/* BODY */}
       <section className="flex flex-grow overflow-hidden">
         {/* CHAT */}
-        <aside className="w-96 bg-slate-200 flex flex-col">
+        <aside className="w-96 bg-white border-r flex flex-col">
           <div
             ref={messageBoxRef}
-            className="flex-grow overflow-auto p-2 space-y-2"
+            className="flex-grow overflow-auto p-3 space-y-3"
           >
             {messages.map((msg, i) => (
               <div
                 key={i}
-                className={`p-2 rounded max-w-xs ${
-                  msg.sender._id === user._id
-                    ? "ml-auto bg-blue-100"
-                    : "bg-white"
+                className={`max-w-[75%] p-3 rounded-xl shadow text-sm
+                ${
+                  msg?.sender?._id === user?._id
+                    ? "ml-auto bg-blue-500 text-white"
+                    : "bg-slate-100"
                 }`}
               >
-                <small className="text-xs text-gray-500">
-                  {msg.sender.email}
+                <small className="opacity-60 block">
+                  {msg?.sender?.email}
                 </small>
-                {msg.sender._id === "ai"
+
+                {msg?.sender?._id === "ai"
                   ? renderAiMessage(msg.message)
-                  : <p>{msg.message}</p>}
+                  : msg.message}
               </div>
             ))}
 
             {aiTyping && (
-              <div className="text-xs text-gray-500 italic">
+              <p className="text-xs text-gray-500 italic">
                 AI is thinking...
-              </div>
+              </p>
             )}
           </div>
 
-          <div className="flex border-t">
+          <div className="border-t flex">
             <input
               value={message}
               onChange={(e) => setMessage(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter" && !e.shiftKey) {
-                  e.preventDefault();
-                  send();
-                }
-              }}
-              placeholder="Type message (@ai to ask AI)"
-              className="flex-grow p-2 outline-none"
+              onKeyDown={(e) => e.key === "Enter" && send()}
+              placeholder="Type message… (@ai)"
+              className="flex-grow p-3 outline-none text-sm"
             />
             <button
-              disabled={!message.trim()}
               onClick={send}
-              className="px-4 bg-slate-900 text-white disabled:opacity-40"
+              className="px-4 bg-slate-900 text-white"
             >
               Send
             </button>
@@ -207,42 +237,38 @@ const Project = () => {
         </aside>
 
         {/* EDITOR */}
-        <section className="flex-grow flex flex-col">
-          <div className="flex bg-slate-300">
+        <section className="flex-grow flex flex-col bg-white">
+          <div className="flex bg-slate-200 border-b">
             {openFiles.map((f) => (
               <button
                 key={f}
                 onClick={() => setCurrentFile(f)}
-                className={`px-4 py-2 ${
-                  currentFile === f ? "bg-slate-400" : ""
+                className={`px-4 py-2 text-sm border-r
+                ${
+                  currentFile === f
+                    ? "bg-slate-800 text-white"
+                    : "hover:bg-slate-300"
                 }`}
               >
                 {f}
               </button>
             ))}
-
-            <button
-              onClick={runProject}
-              className="ml-auto px-4 bg-green-600 text-white"
-            >
-              {runLoading ? "Running..." : "Run"}
-            </button>
           </div>
 
-          <div className="flex-grow overflow-auto bg-white p-4">
+          <div className="flex-grow overflow-auto p-4">
             {currentFile && fileTree[currentFile] && (
-              <pre>
+              <pre className="rounded-lg overflow-auto shadow-inner">
                 <code
                   contentEditable
                   suppressContentEditableWarning
-                  onBlur={(e) => {
+                  onBlur={(e) =>
                     setFileTree({
                       ...fileTree,
                       [currentFile]: {
                         file: { contents: e.target.innerText },
                       },
-                    });
-                  }}
+                    })
+                  }
                   dangerouslySetInnerHTML={{
                     __html: hljs.highlight(
                       "javascript",
@@ -259,6 +285,51 @@ const Project = () => {
           <iframe src={iframeUrl} className="w-96 border-l" />
         )}
       </section>
+
+      {/* COLLAB MODAL */}
+      {showCollaboratorModal && (
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center">
+          <div className="bg-white rounded-xl shadow-2xl p-5 w-96 space-y-3">
+            <h2 className="font-semibold">Add Collaborator</h2>
+
+            {loadingUsers && <p className="text-sm">Loading...</p>}
+
+            <ul className="space-y-2 max-h-60 overflow-auto">
+              {allUsers.map((u) => (
+                <li
+                  key={u._id}
+                  onClick={() => setSelectedUser(u)}
+                  className={`p-2 border rounded cursor-pointer
+                  ${
+                    selectedUser?._id === u._id
+                      ? "bg-blue-100 border-blue-500"
+                      : "hover:bg-gray-100"
+                  }`}
+                >
+                  <p className="text-sm font-medium">{u.name}</p>
+                  <p className="text-xs text-gray-500">{u.email}</p>
+                </li>
+              ))}
+            </ul>
+
+            <div className="flex justify-end gap-2">
+              <button
+                onClick={() => setShowCollaboratorModal(false)}
+                className="px-3 py-1 border rounded"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={addCollaborator}
+                disabled={!selectedUser}
+                className="px-3 py-1 bg-blue-600 text-white rounded disabled:opacity-40"
+              >
+                Add
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </main>
   );
 };

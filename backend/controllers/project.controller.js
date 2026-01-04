@@ -33,6 +33,15 @@ export const createProject = async (req, res) => {
 
 export const getAllProject = async (req, res) => {
     try {
+    //      const authHeader = req.headers.authorization;
+    // console.log("satyam bhai token",authHeader);
+    //  const token =
+    //   req.cookies?.token ||
+    //   (authHeader && authHeader.startsWith("Bearer ")
+    //     ? authHeader.split(" ")[1]
+    //     : null);
+
+    //     console.log("sundram ",token);
 
         const loggedInUser = await userModel.findOne({
             email: req.user.email
