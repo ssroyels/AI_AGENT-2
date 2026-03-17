@@ -1,24 +1,19 @@
 import axios from "axios";
 
 const axiosInstance = axios.create({
-  baseURL: import.meta.env.VITE_API_URL,
-  withCredentials: true,
+  baseURL: "https://ai-agent-2-dgir.onrender.com",
+  withCredentials: true
 });
 
-/* 🔐 ALWAYS ATTACH LATEST TOKEN */
-axiosInstance.interceptors.request.use(
-  (config) => {
-    const token = localStorage.getItem("token");
-    // console.log("satyam",token)
-    
+axiosInstance.interceptors.request.use((config) => {
 
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
-    }
+  const token = localStorage.getItem("token");
 
-    return config;
-  },
-  (error) => Promise.reject(error)
-);
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+
+  return config;
+});
 
 export default axiosInstance;
