@@ -4,31 +4,55 @@ import redisClient from "../services/redis.service.js";
 export const authUser = async (req, res, next) => {
   try {
 
+    /* -------------------------------------------------------------------------- */
+    /* TOKEN EXTRACT */
+    /* -------------------------------------------------------------------------- */
+
     const authHeader = req.headers.authorization;
 
-    const token =
+    let token =
       req.cookies?.token ||
       (authHeader && authHeader.startsWith("Bearer ")
         ? authHeader.split(" ")[1]
         : null);
 
-    console.log("AUTH HEADER:", authHeader);
-    console.log("TOKEN:", token);
-
     if (!token) {
-      return res.status(401).json({ error: "Token missing" });
+      return res.status(401).json({
+        error: "Unauthorized: Token missing"
+      });
     }
 
-    const isBlackListed = await redisClient.get(token);
+    /* -------------------------------------------------------------------------- */
+    /* CHECK REDIS BLACKLIST */
+    /* -------------------------------------------------------------------------- */
+
+    let isBlackListed = null;
+
+    try {
+      isBlackListed = await redisClient.get(token);
+    } catch (err) {
+      console.log("Redis error (ignored):", err.message);
+    }
 
     if (isBlackListed) {
       res.clearCookie("token");
-      return res.status(401).json({ error: "Token revoked" });
+
+      return res.status(401).json({
+        error: "Unauthorized: Token revoked"
+      });
     }
+
+    /* -------------------------------------------------------------------------- */
+    /* VERIFY JWT */
+    /* -------------------------------------------------------------------------- */
 
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
-    console.log("DECODED USER:", decoded);
+    if (!decoded) {
+      return res.status(401).json({
+        error: "Unauthorized: Invalid token"
+      });
+    }
 
     req.user = decoded;
 
@@ -36,10 +60,10 @@ export const authUser = async (req, res, next) => {
 
   } catch (error) {
 
-    console.log("JWT ERROR:", error.message);
+    console.log("Auth Error:", error.message);
 
     return res.status(401).json({
-      error: "Unauthorized User: " + error.message
+      error: "Unauthorized User"
     });
 
   }

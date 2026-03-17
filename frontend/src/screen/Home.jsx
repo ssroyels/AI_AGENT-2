@@ -5,7 +5,27 @@ import image from "../assets/chat.gif";
 
 const API = "https://ai-agent-2-dgir.onrender.com";
 
+/* -------------------------------------------------------------------------- */
+/* AXIOS INSTANCE */
+/* -------------------------------------------------------------------------- */
+
+const api = axios.create({
+  baseURL: API,
+  withCredentials: true
+});
+
+api.interceptors.request.use((config) => {
+  const token = localStorage.getItem("token");
+
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+
+  return config;
+});
+
 const Home = () => {
+
   const [projects, setProjects] = useState([]);
   const [filteredProjects, setFilteredProjects] = useState([]);
   const [search, setSearch] = useState("");
@@ -19,20 +39,17 @@ const Home = () => {
   const navigate = useNavigate();
   const inputRef = useRef(null);
 
-  const token = localStorage.getItem("token");
-
   /* -------------------------------------------------------------------------- */
   /* FETCH PROJECTS */
   /* -------------------------------------------------------------------------- */
+
   useEffect(() => {
+
     const fetchProjects = async () => {
+
       try {
-        const res = await axios.get(`${API}/projects/all`, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-          withCredentials: true,
-        });
+
+        const res = await api.get("/projects/all");
 
         const cleanProjects = (res.data.projects || []).filter(
           (p) => p && typeof p.name === "string"
@@ -40,111 +57,160 @@ const Home = () => {
 
         setProjects(cleanProjects);
         setFilteredProjects(cleanProjects);
+
       } catch (err) {
-        console.log(err.response);
+
+        console.log(err);
+
+        if (err?.response?.status === 401) {
+          localStorage.removeItem("token");
+          navigate("/login");
+        }
+
         setError("⚠️ Failed to load projects");
+
       } finally {
+
         setLoading(false);
+
       }
+
     };
 
     fetchProjects();
+
   }, []);
 
   /* -------------------------------------------------------------------------- */
   /* SEARCH */
   /* -------------------------------------------------------------------------- */
+
   useEffect(() => {
+
     const t = setTimeout(() => {
+
       const filtered = projects.filter((p) =>
         p?.name?.toLowerCase().includes(search.toLowerCase())
       );
+
       setFilteredProjects(filtered);
+
     }, 200);
 
     return () => clearTimeout(t);
+
   }, [search, projects]);
 
   /* -------------------------------------------------------------------------- */
   /* KEYBOARD SHORTCUTS */
   /* -------------------------------------------------------------------------- */
+
   useEffect(() => {
+
     const handler = (e) => {
+
       if ((e.ctrlKey || e.metaKey) && e.key === "k") {
         e.preventDefault();
         setIsModalOpen(true);
       }
-      if (e.key === "Escape") setIsModalOpen(false);
+
+      if (e.key === "Escape") {
+        setIsModalOpen(false);
+      }
+
     };
 
     window.addEventListener("keydown", handler);
+
     return () => window.removeEventListener("keydown", handler);
+
   }, []);
 
   /* -------------------------------------------------------------------------- */
   /* AUTO FOCUS */
   /* -------------------------------------------------------------------------- */
+
   useEffect(() => {
+
     if (isModalOpen) {
-      setTimeout(() => inputRef.current?.focus(), 120);
+      setTimeout(() => inputRef.current?.focus(), 100);
     }
+
   }, [isModalOpen]);
 
   /* -------------------------------------------------------------------------- */
   /* CREATE PROJECT */
   /* -------------------------------------------------------------------------- */
+
   const createProject = async (e) => {
+
     e.preventDefault();
+
     if (!projectName.trim()) return;
 
     try {
+
       setCreateLoading(true);
 
-      const res = await axios.post(
-        `${API}/projects/create`,
-        { name: projectName.trim() },
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-          withCredentials: true,
-        }
-      );
+      const res = await api.post("/projects/create", {
+        name: projectName.trim()
+      });
 
       if (res.data?.project?.name) {
+
         setProjects((prev) => [res.data.project, ...prev]);
-        setFilteredProjects((prev) => [res.data.project, ...prev]);
+
+        setFilteredProjects((prev) => [
+          res.data.project,
+          ...prev
+        ]);
+
       }
 
       setProjectName("");
       setIsModalOpen(false);
+
     } catch (err) {
-      console.log(err.response);
+
+      console.log(err);
+
       setError("❌ Failed to create project");
+
     } finally {
+
       setCreateLoading(false);
+
     }
+
   };
 
   /* -------------------------------------------------------------------------- */
   /* UI */
   /* -------------------------------------------------------------------------- */
+
   return (
     <main className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-black text-white">
-      
+
       {/* HEADER */}
+
       <header className="sticky top-0 z-40 backdrop-blur-md bg-black/40 border-b border-white/10">
+
         <div className="px-6 py-4 flex flex-col md:flex-row items-center justify-between">
+
           <div>
+
             <h1 className="text-3xl font-extrabold tracking-tight">
               DevBoard ⚡
             </h1>
+
             <p className="text-sm text-slate-400">
               Collaborative coding · realtime · AI-powered
             </p>
+
           </div>
 
           <div className="mt-4 md:mt-0 flex gap-3 items-center">
+
             <input
               value={search}
               onChange={(e) => setSearch(e.target.value)}
@@ -158,60 +224,94 @@ const Home = () => {
             >
               + New Project
             </button>
+
           </div>
+
         </div>
+
       </header>
 
       {/* HERO */}
+
       <section className="flex justify-center my-10 px-4">
+
         <img
           src={image}
           alt="Collaboration"
           className="w-full max-w-2xl rounded-xl shadow-2xl border border-white/10"
         />
+
       </section>
 
       {/* PROJECT GRID */}
+
       <section className="px-6 pb-14">
+
         {loading ? (
-          <p className="text-center text-slate-400">Loading projects…</p>
+
+          <p className="text-center text-slate-400">
+            Loading projects…
+          </p>
+
         ) : filteredProjects.length === 0 ? (
+
           <p className="text-center text-slate-400">
             🚀 No projects found. Create your first one!
           </p>
+
         ) : (
+
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+
             {filteredProjects.map((proj) => (
+
               <div
                 key={proj._id}
                 onClick={() =>
-                  navigate("/project", { state: { project: proj } })
+                  navigate("/project", {
+                    state: { project: proj }
+                  })
                 }
                 className="group relative bg-white/10 backdrop-blur-md border border-white/10 rounded-xl p-5 cursor-pointer transition-all hover:-translate-y-2 hover:shadow-2xl hover:border-blue-500/40"
               >
+
                 <div className="w-10 h-10 rounded-full bg-gradient-to-r from-blue-500 to-indigo-500 flex items-center justify-center font-bold mb-3">
                   {proj.name?.charAt(0)?.toUpperCase() || "P"}
                 </div>
 
-                <h3 className="text-lg font-bold truncate">{proj.name}</h3>
+                <h3 className="text-lg font-bold truncate">
+                  {proj.name}
+                </h3>
 
                 <p className="text-sm text-slate-400 mt-1">
                   👥 {proj.users?.length ?? 0} collaborator
                   {proj.users?.length !== 1 && "s"}
                 </p>
+
               </div>
+
             ))}
+
           </div>
+
         )}
+
       </section>
 
       {/* CREATE MODAL */}
+
       {isModalOpen && (
+
         <div className="fixed inset-0 z-50 bg-black/70 flex items-center justify-center">
+
           <div className="bg-slate-900 rounded-xl shadow-2xl w-11/12 max-w-md p-6 border border-white/10">
-            <h2 className="text-xl font-semibold mb-4">🚀 Create New Project</h2>
+
+            <h2 className="text-xl font-semibold mb-4">
+              🚀 Create New Project
+            </h2>
 
             <form onSubmit={createProject}>
+
               <input
                 ref={inputRef}
                 value={projectName}
@@ -221,6 +321,7 @@ const Home = () => {
               />
 
               <div className="flex justify-end gap-3">
+
                 <button
                   type="button"
                   onClick={() => setIsModalOpen(false)}
@@ -236,15 +337,21 @@ const Home = () => {
                 >
                   {createLoading ? "Creating…" : "Create"}
                 </button>
+
               </div>
+
             </form>
+
           </div>
+
         </div>
+
       )}
 
       {error && (
         <p className="text-center text-red-400 pb-6">{error}</p>
       )}
+
     </main>
   );
 };

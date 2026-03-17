@@ -1,30 +1,79 @@
-import { Router } from 'express';
-import * as userController from '../controllers/user.controller.js';
-import { body } from 'express-validator';
-import * as authMiddleware from '../middleware/auth.middleware.js';
+import { Router } from "express";
+import * as userController from "../controllers/user.controller.js";
+import { body } from "express-validator";
+import * as authMiddleware from "../middleware/auth.middleware.js";
 
 const router = Router();
 
+/* -------------------------------------------------------------------------- */
+/* REGISTER */
+/* -------------------------------------------------------------------------- */
 
+router.post(
+  "/register",
 
-router.post('/register',
-    body('name').isLength({min:3}).withMessage("name must ber at least 3 characters long"),
-    body('email').isEmail().withMessage('Email must be a valid email address'),
-    body('password').isLength({ min: 3 }).withMessage('Password must be at least 3 characters long'),
-    userController.createUserController);
+  body("name")
+    .trim()
+    .isLength({ min: 3 })
+    .withMessage("Name must be at least 3 characters"),
 
-router.post('/login',
-    body('email').isEmail().withMessage('Email must be a valid email address'),
-    body('password').isLength({ min: 3 }).withMessage('Password must be at least 3 characters long'),
-    userController.loginController);
+  body("email")
+    .isEmail()
+    .withMessage("Valid email is required"),
 
-router.get('/profile', authMiddleware.authUser, userController.profileController);
+  body("password")
+    .isLength({ min: 6 })
+    .withMessage("Password must be at least 6 characters"),
 
+  userController.createUserController
+);
 
-router.get('/logout', authMiddleware.authUser, userController.logoutController);
+/* -------------------------------------------------------------------------- */
+/* LOGIN */
+/* -------------------------------------------------------------------------- */
 
+router.post(
+  "/login",
 
-router.get('/all', authMiddleware.authUser, userController.getAllUsersController);
+  body("email")
+    .isEmail()
+    .withMessage("Valid email is required"),
 
+  body("password")
+    .isLength({ min: 6 })
+    .withMessage("Password must be at least 6 characters"),
+
+  userController.loginController
+);
+
+/* -------------------------------------------------------------------------- */
+/* PROFILE */
+/* -------------------------------------------------------------------------- */
+
+router.get(
+  "/profile",
+  authMiddleware.authUser,
+  userController.profileController
+);
+
+/* -------------------------------------------------------------------------- */
+/* LOGOUT */
+/* -------------------------------------------------------------------------- */
+
+router.post(
+  "/logout",
+  authMiddleware.authUser,
+  userController.logoutController
+);
+
+/* -------------------------------------------------------------------------- */
+/* GET ALL USERS */
+/* -------------------------------------------------------------------------- */
+
+router.get(
+  "/all",
+  authMiddleware.authUser,
+  userController.getAllUsersController
+);
 
 export default router;

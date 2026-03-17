@@ -1,109 +1,72 @@
-import { GoogleGenerativeAI } from "@google/generative-ai"
+import { GoogleGenerativeAI } from "@google/generative-ai";
 
+/* -------------------------------------------------------------------------- */
+/* CHECK API KEY */
+/* -------------------------------------------------------------------------- */
+
+if (!process.env.GOOGLE_AI_KEY) {
+  console.warn("⚠️ GOOGLE_AI_KEY is missing in environment variables");
+}
+
+/* -------------------------------------------------------------------------- */
+/* INIT MODEL */
+/* -------------------------------------------------------------------------- */
 
 const genAI = new GoogleGenerativeAI(process.env.GOOGLE_AI_KEY);
+
 const model = genAI.getGenerativeModel({
-    model: "gemini-2.5-flash",
-    generationConfig: {
-        responseMimeType: "application/json",
-        temperature: 0.4,
-    },
-    systemInstruction: `You are an expert in MERN and Development. You have an experience of 10 years in the development. You always write code in modular and break the code in the possible way and follow best practices, You use understandable comments in the code, you create files as needed, you write code while maintaining the working of previous code. You always follow the best practices of the development You never miss the edge cases and always write code that is scalable and maintainable, In your code you always handle the errors and exceptions.
-    
-    Examples: 
+  model: "gemini-2.5-flash",
+  generationConfig: {
+    temperature: 0.4,
+    responseMimeType: "application/json"
+  },
 
-    <example>
- 
-    response: {
+  systemInstruction: `
+You are a senior MERN stack developer with 10 years of experience.
 
-    "text": "this is you fileTree structure of the express server",
-    "fileTree": {
-        "app.js": {
-            file: {
-                contents: "
-                const express = require('express');
-
-                const app = express();
-
-
-                app.get('/', (req, res) => {
-                    res.send('Hello World!');
-                });
-
-
-                app.listen(3000, () => {
-                    console.log('Server is running on port 3000');
-                })
-                "
-            
-        },
-    },
-
-        "package.json": {
-            file: {
-                contents: "
-
-                {
-                    "name": "temp-server",
-                    "version": "1.0.0",
-                    "main": "index.js",
-                    "scripts": {
-                        "test": "echo \"Error: no test specified\" && exit 1"
-                    },
-                    "keywords": [],
-                    "author": "",
-                    "license": "ISC",
-                    "description": "",
-                    "dependencies": {
-                        "express": "^4.21.2"
-                    }
-}
-
-                
-                "
-                
-                
-
-            },
-
-        },
-
-    },
-    "buildCommand": {
-        mainItem: "npm",
-            commands: [ "install" ]
-    },
-
-    "startCommand": {
-        mainItem: "node",
-            commands: [ "app.js" ]
-    }
-}
-
-    user:Create an express application 
-   
-    </example>
-
-
-    
-       <example>
-
-       user:Hello 
-       response:{
-       "text":"Hello, How can I help you today?"
-       }
-       
-       </example>
-    
- IMPORTANT : don't use file name like routes/index.js
-       
-       
-    `
+Rules:
+- Always generate modular and scalable code
+- Follow best practices
+- Handle errors properly
+- Maintain existing code structure
+- Write readable comments
+- Never break existing code
+- Avoid using filenames like routes/index.js
+- Always return valid JSON response
+`
 });
+
+/* -------------------------------------------------------------------------- */
+/* GENERATE RESULT */
+/* -------------------------------------------------------------------------- */
 
 export const generateResult = async (prompt) => {
 
+  if (!prompt) {
+    throw new Error("Prompt is required");
+  }
+
+  try {
+
     const result = await model.generateContent(prompt);
 
-    return result.response.text()
-}
+    const text = result?.response?.text();
+
+    if (!text) {
+      return JSON.stringify({
+        text: "AI returned an empty response"
+      });
+    }
+
+    return text;
+
+  } catch (error) {
+
+    console.error("AI Error:", error.message);
+
+    return JSON.stringify({
+      text: "AI service temporarily unavailable"
+    });
+
+  }
+};

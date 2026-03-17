@@ -11,41 +11,56 @@ import cors from "cors";
 const port = process.env.PORT || 5000;
 
 /* -------------------------------------------------------------------------- */
-/* ALLOWED ORIGINS */
+/* CORS CONFIG */
 /* -------------------------------------------------------------------------- */
-// const ALLOWED_ORIGINS ="https://ai-agent-2-dgir.onrender.com";
 
+const allowedOrigins = [
+  "http://localhost:5173",
+  "https://ai-agent-2-1.onrender.com"
+];
 
-/* -------------------------------------------------------------------------- */
-/* EXPRESS CORS */
-/* -------------------------------------------------------------------------- */
 app.use(
   cors({
-    origin: "*",
-    credentials: true,
+    origin: function (origin, callback) {
+
+      if (!origin) return callback(null, true);
+
+      if (allowedOrigins.includes(origin)) {
+        callback(null, true);
+      } else {
+        callback(new Error("CORS not allowed"));
+      }
+
+    },
+    credentials: true
   })
 );
 
 /* -------------------------------------------------------------------------- */
 /* HTTP SERVER */
 /* -------------------------------------------------------------------------- */
+
 const server = http.createServer(app);
 
 /* -------------------------------------------------------------------------- */
-/* SOCKET.IO SERVER */
+/* SOCKET SERVER */
 /* -------------------------------------------------------------------------- */
+
 const io = new Server(server, {
   cors: {
-    origin: "*",
-    credentials: true,
-  },
+    origin: allowedOrigins,
+    credentials: true
+  }
 });
 
 /* -------------------------------------------------------------------------- */
-/* SOCKET AUTH MIDDLEWARE */
+/* SOCKET AUTH */
 /* -------------------------------------------------------------------------- */
+
 io.use(async (socket, next) => {
+
   try {
+
     const token =
       socket.handshake.auth?.token ||
       socket.handshake.headers.authorization?.split(" ")[1];
@@ -53,7 +68,7 @@ io.use(async (socket, next) => {
     const { projectId } = socket.handshake.query;
 
     if (!token) {
-      return next(new Error("No auth token provided"));
+      return next(new Error("Socket auth failed: token missing"));
     }
 
     if (!mongoose.Types.ObjectId.isValid(projectId)) {
@@ -65,52 +80,87 @@ io.use(async (socket, next) => {
     socket.user = decoded;
 
     const project = await projectModel.findById(projectId);
+
     if (!project) {
       return next(new Error("Project not found"));
     }
 
     socket.project = project;
+
     next();
-  } catch (err) {
-    console.error("🔴 Socket auth error:", err.message);
-    next(new Error("Unauthorized socket connection"));
+
+  } catch (error) {
+
+    console.log("Socket Auth Error:", error.message);
+
+    next(new Error("Unauthorized socket"));
+
   }
+
 });
 
 /* -------------------------------------------------------------------------- */
 /* SOCKET EVENTS */
 /* -------------------------------------------------------------------------- */
+
 io.on("connection", (socket) => {
+
   const roomId = socket.project._id.toString();
+
   socket.join(roomId);
 
   console.log("🟢 Socket connected:", socket.id);
 
   socket.on("project-message", async (data) => {
-    const message = data.message;
 
-    socket.broadcast.to(roomId).emit("project-message", data);
+    try {
 
-    if (message.includes("@ai")) {
-      const prompt = message.replace("@ai", "").trim();
-      const result = await generateResult(prompt);
+      const message = data.message;
 
-      io.to(roomId).emit("project-message", {
-        message: result,
-        sender: { _id: "ai", email: "AI" },
-      });
+      socket.broadcast.to(roomId).emit("project-message", data);
+
+      /* ---------------- AI MESSAGE ---------------- */
+
+      if (message.includes("@ai")) {
+
+        const prompt = message.replace("@ai", "").trim();
+
+        if (!prompt) return;
+
+        const result = await generateResult(prompt);
+
+        io.to(roomId).emit("project-message", {
+          message: result,
+          sender: {
+            _id: "ai",
+            email: "AI Assistant"
+          }
+        });
+
+      }
+
+    } catch (error) {
+
+      console.log("Socket message error:", error.message);
+
     }
+
   });
 
   socket.on("disconnect", () => {
+
     console.log("🔴 Socket disconnected:", socket.id);
+
     socket.leave(roomId);
+
   });
+
 });
 
 /* -------------------------------------------------------------------------- */
 /* START SERVER */
 /* -------------------------------------------------------------------------- */
+
 server.listen(port, () => {
   console.log(`🚀 Server running on port ${port}`);
 });
