@@ -20,11 +20,11 @@ export const authUser = async (req, res, next) => {
     console.log("satyam bhai", token)
 
     // ✅ Check blacklist
-    const isBlackListed = await redisClient.get(token);
-    if (isBlackListed) {
-      res.clearCookie("token");
-      return res.status(401).json({ error: "Unauthorized User: Token revoked" });
-    }
+    // const isBlackListed = await redisClient.get(token);
+    // if (isBlackListed) {
+    //   res.clearCookie("token");
+    //   return res.status(401).json({ error: "Unauthorized User: Token revoked" });
+    // }
 
     // ✅ Verify token
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
